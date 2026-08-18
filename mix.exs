@@ -5,7 +5,7 @@ defmodule Litenps.MixProject do
     [
       app: :litenps,
       version: "0.1.0",
-      elixir: "~> 1.17",
+      elixir: "~> 1.20",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       aliases: aliases(),
@@ -72,7 +72,8 @@ defmodule Litenps.MixProject do
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:dns_cluster, "~> 0.2.0"},
-      {:bandit, "~> 1.12"}
+      {:bandit, "~> 1.12"},
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
     ]
   end
 
