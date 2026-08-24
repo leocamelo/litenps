@@ -40,13 +40,14 @@ defmodule Litenps.MixProject do
   # Type `mix help deps` for examples and options.
   defp deps do
     [
-      {:phoenix, "~> 1.8.11"},
+      {:bcrypt_elixir, "~> 3.0"},
+      {:phoenix, "~> 1.8.12"},
       {:phoenix_ecto, "~> 4.7"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.3"},
       {:phoenix_live_reload, "~> 1.7", only: :dev},
-      {:phoenix_live_view, "~> 1.2.9"},
+      {:phoenix_live_view, "~> 1.2.10"},
       {:lazy_html, ">= 0.1.0", only: :test},
       {:phoenix_live_dashboard, "~> 0.9.0"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
@@ -65,7 +66,7 @@ defmodule Litenps.MixProject do
        app: false,
        compile: false,
        depth: 1},
-      {:swoosh, "~> 1.27"},
+      {:swoosh, "~> 1.28"},
       {:req, "~> 0.7"},
       {:telemetry_metrics, "~> 1.1"},
       {:telemetry_poller, "~> 1.3"},
