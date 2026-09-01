@@ -41,15 +41,15 @@ defmodule Litenps.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.8.12"},
+      {:phoenix, "~> 1.8.13"},
       {:phoenix_ecto, "~> 4.7"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, "~> 4.3"},
       {:phoenix_live_reload, "~> 1.7", only: :dev},
-      {:phoenix_live_view, "~> 1.2.10"},
+      {:phoenix_live_view, "~> 1.2.11"},
       {:lazy_html, ">= 0.1.0", only: :test},
-      {:phoenix_live_dashboard, "~> 0.9.0"},
+      {:phoenix_live_dashboard, "~> 0.9.1"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.5", runtime: Mix.env() == :dev},
       {:heroicons,
@@ -68,13 +68,14 @@ defmodule Litenps.MixProject do
        depth: 1},
       {:swoosh, "~> 1.28"},
       {:req, "~> 0.7"},
-      {:telemetry_metrics, "~> 1.1"},
+      {:telemetry_metrics, "~> 1.2"},
       {:telemetry_poller, "~> 1.3"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.4"},
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.12"},
-      {:credo, "~> 1.7", only: [:dev, :test], runtime: false}
+      {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.15", only: [:dev, :test], runtime: false}
     ]
   end
 
@@ -97,7 +98,14 @@ defmodule Litenps.MixProject do
         "esbuild litenps --minify",
         "phx.digest"
       ],
-      precommit: ["compile --warnings-as-errors", "deps.unlock --unused", "format", "test"]
+      precommit: [
+        "compile --warnings-as-errors",
+        "deps.unlock --unused",
+        "format",
+        "credo --strict",
+        "sobelow",
+        "test"
+      ]
     ]
   end
 end
