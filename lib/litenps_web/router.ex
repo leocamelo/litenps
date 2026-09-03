@@ -9,7 +9,7 @@ defmodule LitenpsWeb.Router do
     plug :fetch_live_flash
     plug :put_root_layout, html: {LitenpsWeb.Layouts, :root}
     plug :protect_from_forgery
-    plug :put_secure_browser_headers, %{"content-security-policy" => "default-src 'self'"}
+    plug :put_secure_browser_headers
     plug :fetch_current_scope_for_user
   end
 

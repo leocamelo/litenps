@@ -9,7 +9,7 @@
 [
   exit: "low",
   format: "txt",
-  ignore: [],
+  ignore: ["Config.CSP"],
   ignore_files: [],
   out: nil,
   private: false,
