@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to a branch makes the previous run irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  MIX_ENV: test
+  ELIXIR_VERSION: "1.20"
+  OTP_VERSION: "29"
+
+jobs:
+  # One job, in the same order as `mix precommit`, so a red CI and a red
+  # precommit mean the same thing.
+  check:
+    name: precommit
+    runs-on: ubuntu-24.04
+
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: erlef/setup-beam@v1
+        id: beam
+        with:
+          elixir-version: ${{ env.ELIXIR_VERSION }}
+          otp-version: ${{ env.OTP_VERSION }}
+
+      # Only fetched/compiled dependencies are cached. The project's own build
+      # is not, so `mix compile --force` below always sees every warning.
+      - uses: actions/cache@v4
+        with:
+          path: |
+            deps
+            _build/test/lib
+          key: ${{ runner.os }}-mix-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-${{ hashFiles('mix.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-mix-${{ steps.beam.outputs.otp-version }}-${{ steps.beam.outputs.elixir-version }}-
+
+      - name: Fetch dependencies
+        run: mix deps.get --check-locked
+
+      - name: Check for unused dependencies
+        run: mix deps.unlock --check-unused
+
+      - name: Check for retired dependencies
+        run: mix hex.audit
+
+      # mix_audit reads the Elixir Security Advisory DB; hex.audit above only
+      # covers packages their own maintainers retired.
+      - name: Audit dependencies for known vulnerabilities
+        run: mix deps.audit
+
+      # --force so unchanged files are recompiled too: an incremental build on a
+      # restored cache would stay silent about a warning it already reported.
+      - name: Compile
+        run: mix compile --warnings-as-errors --force
+
+      - name: Check formatting
+        run: mix format --check-formatted
+
+      - name: Credo
+        run: mix credo --strict
+
+      # Reads .sobelow-conf, which sets `exit: "low"` — findings fail the build.
+      - name: Sobelow
+        run: mix sobelow --config
+
+      - name: Test
+        run: mix test

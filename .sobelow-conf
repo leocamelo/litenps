@@ -1,0 +1,20 @@
+# Read by `mix sobelow --config`, which is what `mix precommit` and CI run.
+#
+# exit: "low"  — any finding at or above the threshold fails the build.
+#                Without it sobelow always exits 0 and the check is decorative.
+# skip: true   — honour `# sobelow_skip` annotations in the source. The `:widget`
+#                pipeline intentionally has no CSRF protection (CLAUDE.md rule 5),
+#                and that is expressed as an annotated skip, never by loosening
+#                the check globally.
+[
+  exit: "low",
+  format: "txt",
+  ignore: [],
+  ignore_files: [],
+  out: nil,
+  private: false,
+  router: nil,
+  skip: true,
+  threshold: :low,
+  verbose: false
+]
