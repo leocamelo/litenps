@@ -35,3 +35,4 @@ litenps-*.tar
 npm-debug.log
 /assets/node_modules/
 
+CLAUDE.local.md

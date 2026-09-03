@@ -103,7 +103,7 @@ defmodule Litenps.MixProject do
         "deps.unlock --unused",
         "format",
         "credo --strict",
-        "sobelow",
+        "sobelow --config",
         "test"
       ]
     ]
