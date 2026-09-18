@@ -4,7 +4,7 @@ Reference document. Read before starting a new phase or proposing a structural
 change. Not loaded into agent context automatically — the distilled rules live in
 `CLAUDE.md` and `.claude/rules/`.
 
-Last revised: 2026-08
+Last revised: 2026-09
 
 ---
 
@@ -73,6 +73,22 @@ are listed here so they are not silently reintroduced.
 
 ### `Litenps.Accounts`
 Users and organizations. Generated with Phoenix 1.8 auth + scopes.
+
+`orgs`: `id`, `name`, `inserted_at`
+
+`users`: the generated auth schema plus `org_id`.
+
+**A user belongs to exactly one organization**, created in the same transaction
+at registration. This is what lets the scope resolve a tenant from the session
+alone — there is no organization picker anywhere in the interface, and so no code
+path that can pick the wrong one. An organization has many users, so invites need
+only an invite flow and a `role` column, not a change to the tenant boundary. A
+`role` is deliberately absent until invites exist. See `docs/adr/0001-organization-as-tenant.md`.
+
+`Litenps.Accounts.Scope` carries `%Scope{user: user, org: org}`.
+`Scope.for_user/1` raises on a user whose organization is not loaded, and every
+path in `Accounts` that can feed a scope preloads it — a scope that cannot name
+its tenant is unconstructible, not merely discouraged.
 
 ### `Litenps.Sites`
 The measurement scope. An org has many sites. **The tenant is the org.**

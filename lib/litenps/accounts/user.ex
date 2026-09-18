@@ -2,6 +2,8 @@ defmodule Litenps.Accounts.User do
   use Ecto.Schema
   import Ecto.Changeset
 
+  alias Litenps.Accounts.Org
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "users" do
@@ -10,6 +12,8 @@ defmodule Litenps.Accounts.User do
     field :hashed_password, :string, redact: true
     field :confirmed_at, :utc_datetime
     field :authenticated_at, :utc_datetime, virtual: true
+
+    belongs_to :org, Org
 
     timestamps(type: :utc_datetime)
   end

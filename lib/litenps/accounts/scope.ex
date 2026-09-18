@@ -16,17 +16,31 @@ defmodule Litenps.Accounts.Scope do
   growing application requirements.
   """
 
+  alias Litenps.Accounts.Org
   alias Litenps.Accounts.User
 
-  defstruct user: nil
+  defstruct user: nil, org: nil
 
   @doc """
   Creates a scope for the given user.
 
+  The user's organization must be loaded. A scope without an organization
+  cannot scope a query to a tenant, so building one is a programming error
+  rather than a value any caller should have to handle.
+
   Returns nil if no user is given.
   """
+  def for_user(%User{org: %Org{} = org} = user) do
+    %__MODULE__{user: user, org: org}
+  end
+
   def for_user(%User{} = user) do
-    %__MODULE__{user: user}
+    raise ArgumentError, """
+    cannot build a scope for user #{user.id} because its organization is not loaded.
+
+    Load users through `Litenps.Accounts`, which preloads the organization on
+    every path that feeds a scope.
+    """
   end
 
   def for_user(nil), do: nil

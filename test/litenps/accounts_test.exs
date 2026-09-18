@@ -4,7 +4,7 @@ defmodule Litenps.AccountsTest do
   alias Litenps.Accounts
 
   import Litenps.AccountsFixtures
-  alias Litenps.Accounts.{User, UserToken}
+  alias Litenps.Accounts.{Org, Scope, User, UserToken}
 
   describe "get_user_by_email/1" do
     test "does not return the user if the email does not exist" do
@@ -84,6 +84,28 @@ defmodule Litenps.AccountsTest do
       assert is_nil(user.hashed_password)
       assert is_nil(user.confirmed_at)
       assert is_nil(user.password)
+    end
+
+    test "creates an organization for the user, named after their email" do
+      {:ok, user} = Accounts.register_user(valid_user_attributes(email: "someone@example.com"))
+
+      assert %Org{name: "someone"} = user.org
+      assert user.org_id == user.org.id
+    end
+
+    test "gives each user their own organization" do
+      {:ok, one} = Accounts.register_user(valid_user_attributes())
+      {:ok, two} = Accounts.register_user(valid_user_attributes())
+
+      refute one.org_id == two.org_id
+    end
+
+    test "creates no organization when registration fails" do
+      before = Repo.aggregate(Org, :count)
+
+      {:error, _changeset} = Accounts.register_user(%{email: "not valid"})
+
+      assert Repo.aggregate(Org, :count) == before
     end
   end
 
@@ -392,6 +414,55 @@ defmodule Litenps.AccountsTest do
   describe "inspect/2 for the User module" do
     test "does not include password" do
       refute inspect(%User{password: "123456"}) =~ "password: \"123456\""
+    end
+  end
+
+  describe "organization scoping" do
+    test "users loaded through the context carry their organization" do
+      user = user_fixture()
+
+      assert %Org{} = Accounts.get_user!(user.id).org
+      assert %Org{} = Accounts.get_user_by_email(user.email).org
+
+      user = set_password(user)
+
+      assert %Org{} =
+               Accounts.get_user_by_email_and_password(user.email, valid_user_password()).org
+    end
+
+    test "the session token path carries the organization" do
+      user = user_fixture()
+      token = Accounts.generate_user_session_token(user)
+
+      {session_user, _inserted_at} = Accounts.get_user_by_session_token(token)
+      assert session_user.org_id == user.org_id
+      assert %Org{} = session_user.org
+    end
+
+    test "the magic link path carries the organization" do
+      user = unconfirmed_user_fixture()
+      {encoded_token, _hashed_token} = generate_user_magic_link_token(user)
+
+      assert Accounts.get_user_by_magic_link_token(encoded_token).org_id == user.org_id
+
+      {:ok, {logged_in, _tokens}} = Accounts.login_user_by_magic_link(encoded_token)
+      assert %Org{} = logged_in.org
+    end
+
+    test "a scope built from a loaded user carries the organization" do
+      user = user_fixture()
+      scope = Scope.for_user(user)
+
+      assert scope.org.id == user.org_id
+      assert scope.user.id == user.id
+    end
+
+    test "building a scope from a user without a loaded organization raises" do
+      user = user_fixture()
+
+      assert_raise ArgumentError, ~r/organization is not loaded/, fn ->
+        Scope.for_user(%{user | org: %Ecto.Association.NotLoaded{}})
+      end
     end
   end
 end

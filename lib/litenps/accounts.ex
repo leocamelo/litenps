@@ -6,7 +6,7 @@ defmodule Litenps.Accounts do
   import Ecto.Query, warn: false
   alias Litenps.Repo
 
-  alias Litenps.Accounts.{User, UserToken, UserNotifier}
+  alias Litenps.Accounts.{Org, User, UserToken, UserNotifier}
 
   ## Database getters
 
@@ -23,7 +23,7 @@ defmodule Litenps.Accounts do
 
   """
   def get_user_by_email(email) when is_binary(email) do
-    Repo.get_by(User, email: email)
+    User |> Repo.get_by(email: email) |> with_org()
   end
 
   @doc """
@@ -41,7 +41,7 @@ defmodule Litenps.Accounts do
   def get_user_by_email_and_password(email, password)
       when is_binary(email) and is_binary(password) do
     user = Repo.get_by(User, email: email)
-    if User.valid_password?(user, password), do: user
+    if User.valid_password?(user, password), do: with_org(user)
   end
 
   @doc """
@@ -58,12 +58,16 @@ defmodule Litenps.Accounts do
       ** (Ecto.NoResultsError)
 
   """
-  def get_user!(id), do: Repo.get!(User, id)
+  def get_user!(id), do: User |> Repo.get!(id) |> with_org()
 
   ## User registration
 
   @doc """
-  Registers a user.
+  Registers a user together with the organization that owns their data.
+
+  A user belongs to exactly one organization, and it is created here in the
+  same transaction, so there is no point at which a user exists without a
+  tenant to scope their queries to.
 
   ## Examples
 
@@ -75,9 +79,36 @@ defmodule Litenps.Accounts do
 
   """
   def register_user(attrs) do
-    %User{}
+    changeset = User.email_changeset(%User{}, attrs)
+
+    Repo.transact(fn ->
+      # Validate before touching the organization, so a bad email comes back as
+      # an error on the user changeset the registration form is built from,
+      # rather than as a missing name on an organization the caller never saw.
+      with {:ok, %User{email: email}} <- Ecto.Changeset.apply_action(changeset, :insert),
+           {:ok, org} <- create_org(email),
+           {:ok, user} <- create_user(org.id, attrs) do
+        {:ok, %{user | org: org}}
+      end
+    end)
+  end
+
+  defp create_org(email) do
+    %Org{}
+    |> Org.changeset(%{name: default_org_name(email)})
+    |> Repo.insert()
+  end
+
+  defp create_user(org_id, attrs) do
+    %User{org_id: org_id}
     |> User.email_changeset(attrs)
     |> Repo.insert()
+  end
+
+  # The registration form only asks for an email, so the organization starts out
+  # named after it. It is renameable; nothing derives from this value.
+  defp default_org_name(email) do
+    email |> String.split("@") |> List.first()
   end
 
   ## Settings
@@ -185,7 +216,11 @@ defmodule Litenps.Accounts do
   """
   def get_user_by_session_token(token) do
     {:ok, query} = UserToken.verify_session_token_query(token)
-    Repo.one(query)
+
+    case Repo.one(query) do
+      {%User{} = user, token_inserted_at} -> {with_org(user), token_inserted_at}
+      nil -> nil
+    end
   end
 
   @doc """
@@ -194,7 +229,7 @@ defmodule Litenps.Accounts do
   def get_user_by_magic_link_token(token) do
     with {:ok, query} <- UserToken.verify_magic_link_token_query(token),
          {user, _token} <- Repo.one(query) do
-      user
+      with_org(user)
     else
       _ -> nil
     end
@@ -234,12 +269,13 @@ defmodule Litenps.Accounts do
 
       {%User{confirmed_at: nil} = user, _token} ->
         user
+        |> with_org()
         |> User.confirm_changeset()
         |> update_user_and_delete_all_tokens()
 
       {user, token} ->
         Repo.delete!(token)
-        {:ok, {user, []}}
+        {:ok, {with_org(user), []}}
 
       nil ->
         {:error, :not_found}
@@ -280,6 +316,14 @@ defmodule Litenps.Accounts do
     Repo.delete_all(from(UserToken, where: [token: ^token, context: "session"]))
     :ok
   end
+
+  ## Org helper
+
+  # Every path that can feed `Litenps.Accounts.Scope.for_user/1` loads the
+  # organization, so the scope can always be built without a second lookup by
+  # the caller.
+  defp with_org(nil), do: nil
+  defp with_org(%User{} = user), do: Repo.preload(user, :org)
 
   ## Token helper
 
