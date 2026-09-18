@@ -35,27 +35,7 @@ defmodule LitenpsWeb.Layouts do
 
   def app(assigns) do
     ~H"""
-    <header class="navbar px-4 sm:px-6 lg:px-8">
-      <div class="flex-1">
-        <.link
-          navigate={if @current_scope, do: ~p"/sites", else: ~p"/"}
-          class="flex w-fit items-center gap-2"
-        >
-          <img src={~p"/images/logo.svg"} width="36" />
-          <span class="font-semibold">LiteNPS</span>
-        </.link>
-      </div>
-      <div class="flex-none">
-        <ul class="flex items-center gap-2 px-1">
-          <li :if={@current_scope}>
-            <.link navigate={~p"/sites"} class="btn btn-ghost">Sites</.link>
-          </li>
-          <li>
-            <.theme_toggle />
-          </li>
-        </ul>
-      </div>
-    </header>
+    <.navbar current_scope={@current_scope} />
 
     <main class="px-4 py-20 sm:px-6 lg:px-8">
       <div class="mx-auto max-w-2xl space-y-4">
@@ -64,6 +44,68 @@ defmodule LitenpsWeb.Layouts do
     </main>
 
     <.flash_group flash={@flash} />
+    """
+  end
+
+  @doc """
+  Renders the top navigation bar: the dashboard links and account menu for a
+  logged-in user, or register and log in links otherwise.
+
+  `app/1` renders it, so pages using `Layouts.app` get it for free. Pages that
+  render outside that layout, like the home page, render it directly.
+
+  ## Examples
+
+      <Layouts.navbar current_scope={@current_scope} />
+  """
+  attr :current_scope, :map,
+    default: nil,
+    doc: "the current [scope](https://phoenix.hexdocs.pm/scopes.html)"
+
+  def navbar(assigns) do
+    ~H"""
+    <header id="navbar" class="navbar relative z-10 gap-2 px-4 sm:px-6 lg:px-8">
+      <div class="flex-1">
+        <.link
+          navigate={if @current_scope, do: ~p"/sites", else: ~p"/"}
+          class="flex w-fit items-center gap-2"
+        >
+          <img src={~p"/images/logo.svg"} width="36" alt="" />
+          <span class="font-semibold">LiteNPS</span>
+        </.link>
+      </div>
+      <nav class="flex-none">
+        <ul class="flex items-center gap-1">
+          <%= if @current_scope do %>
+            <li>
+              <.link navigate={~p"/sites"} class="btn btn-ghost btn-sm">Sites</.link>
+            </li>
+            <li class="mx-2 h-5 border-l border-base-300" aria-hidden="true"></li>
+            <li class="hidden px-2 text-sm opacity-70 sm:block">
+              {@current_scope.user.email}
+            </li>
+            <li>
+              <.link navigate={~p"/users/settings"} class="btn btn-ghost btn-sm">Settings</.link>
+            </li>
+            <li>
+              <.link href={~p"/users/log-out"} method="delete" class="btn btn-ghost btn-sm">
+                Log out
+              </.link>
+            </li>
+          <% else %>
+            <li>
+              <.link navigate={~p"/users/log-in"} class="btn btn-ghost btn-sm">Log in</.link>
+            </li>
+            <li>
+              <.link navigate={~p"/users/register"} class="btn btn-primary btn-sm">Register</.link>
+            </li>
+          <% end %>
+          <li class="ml-2">
+            <.theme_toggle />
+          </li>
+        </ul>
+      </nav>
+    </header>
     """
   end
 
