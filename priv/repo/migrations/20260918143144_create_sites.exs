@@ -31,7 +31,7 @@ defmodule Litenps.Repo.Migrations.CreateSites do
       add :label, :string
       add :revoked_at, :utc_datetime
 
-      timestamps(type: :utc_datetime, updated_at: false)
+      timestamps(type: :utc_datetime_usec, updated_at: false)
     end
 
     create unique_index(:api_keys, [:key])

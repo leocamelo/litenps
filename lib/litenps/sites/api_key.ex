@@ -32,7 +32,7 @@ defmodule Litenps.Sites.ApiKey do
     belongs_to :org, Org
     belongs_to :site, Site
 
-    timestamps(type: :utc_datetime, updated_at: false)
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 
   @doc """

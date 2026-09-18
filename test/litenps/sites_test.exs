@@ -195,6 +195,15 @@ defmodule Litenps.SitesTest do
       assert length(Sites.list_api_keys(scope, site)) == 4
     end
 
+    test "get_api_key!/3 only finds keys of the given site", %{scope: scope} do
+      site = site_fixture(scope)
+      other_site = site_fixture(scope)
+      [key] = Sites.list_api_keys(scope, site)
+
+      assert Sites.get_api_key!(scope, site, key.id).id == key.id
+      assert_raise Ecto.NoResultsError, fn -> Sites.get_api_key!(scope, other_site, key.id) end
+    end
+
     test "labels are bounded", %{scope: scope} do
       site = site_fixture(scope)
 

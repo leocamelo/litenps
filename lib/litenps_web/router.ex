@@ -54,6 +54,11 @@ defmodule LitenpsWeb.Router do
       on_mount: [{LitenpsWeb.UserAuth, :require_authenticated}] do
       live "/users/settings", UserLive.Settings, :edit
       live "/users/settings/confirm-email/:token", UserLive.Settings, :confirm_email
+
+      live "/sites", SiteLive.Index, :index
+      live "/sites/new", SiteLive.Form, :new
+      live "/sites/:id", SiteLive.Show, :show
+      live "/sites/:id/edit", SiteLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

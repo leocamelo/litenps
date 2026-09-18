@@ -119,6 +119,17 @@ defmodule Litenps.Sites do
   end
 
   @doc """
+  Gets one of a site's API keys.
+
+  Raises `Ecto.NoResultsError` if it does not exist or belongs to another site
+  or org.
+  """
+  @spec get_api_key!(Scope.t(), Site.t(), Ecto.UUID.t()) :: ApiKey.t()
+  def get_api_key!(%Scope{org: %{id: org_id}}, %Site{org_id: org_id, id: site_id}, id) do
+    Repo.get_by!(ApiKey, id: id, site_id: site_id, org_id: org_id)
+  end
+
+  @doc """
   Issues a new key for a site, optionally labelled. Rotating a key means issuing
   a new one, switching the snippet over, then revoking the old one.
   """
