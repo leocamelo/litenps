@@ -96,10 +96,18 @@ The measurement scope. An org has many sites. **The tenant is the org.**
 `sites`: `id`, `org_id`, `name`, `allowed_origins` (array), `timezone`,
 `data_retention_days`, `inserted_at`
 
-`api_keys`: `id`, `site_id`, `org_id`, `key` (`pk_live_...`, unique), `revoked_at`
+`api_keys`: `id`, `site_id`, `org_id`, `key` (`pk_live_...`, unique), `label`,
+`revoked_at`
 
 Keys are a separate table, not a column, because a leaked key must be rotatable.
-Two keys may be active at once during a transition; a revoked key returns `404`.
+Any number of keys may be active, each with an optional label to tell them apart.
+Rotation is issue-then-revoke, and the last active key cannot be revoked, so a
+rotation never takes the widget down. A revoked key returns `404`.
+
+`allowed_origins` may be empty, so a site can be created before its origins are
+known; the dashboard asks for them before showing the install snippet. **Origin
+checks fail closed:** a site with no origins accepts no widget requests. An empty
+list never means "allow any origin".
 
 ### `Litenps.Surveys`
 Survey definition and display rules.

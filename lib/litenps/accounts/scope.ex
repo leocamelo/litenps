@@ -21,6 +21,8 @@ defmodule Litenps.Accounts.Scope do
 
   defstruct user: nil, org: nil
 
+  @type t :: %__MODULE__{user: User.t() | nil, org: Org.t() | nil}
+
   @doc """
   Creates a scope for the given user.
 

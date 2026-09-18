@@ -7,15 +7,17 @@
 # General application configuration
 import Config
 
+# Generators scope by org, the tenant. There is deliberately no user scope: a
+# user_id-scoped table would break the tenant boundary (see CLAUDE.md rule 6).
 config :litenps, :scopes,
-  user: [
+  org: [
     default: true,
     module: Litenps.Accounts.Scope,
     assign_key: :current_scope,
-    access_path: [:user, :id],
-    schema_key: :user_id,
+    access_path: [:org, :id],
+    schema_key: :org_id,
     schema_type: :binary_id,
-    schema_table: :users,
+    schema_table: :orgs,
     test_data_fixture: Litenps.AccountsFixtures,
     test_setup_helper: :register_and_log_in_user
   ]

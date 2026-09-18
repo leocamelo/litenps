@@ -16,6 +16,8 @@ defmodule Litenps.Accounts.Org do
 
   alias Litenps.Accounts.User
 
+  @type t :: %__MODULE__{}
+
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "orgs" do

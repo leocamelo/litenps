@@ -50,6 +50,10 @@ defmodule Litenps.AccountsFixtures do
     Scope.for_user(user)
   end
 
+  # Named for the `:org` generator scope in config/config.exs.
+  def org_scope_fixture, do: user_scope_fixture()
+  def org_scope_fixture(user), do: user_scope_fixture(user)
+
   def set_password(user) do
     {:ok, {user, _expired_tokens}} =
       Accounts.update_user_password(user, %{password: valid_user_password()})
