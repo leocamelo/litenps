@@ -59,6 +59,8 @@ defmodule LitenpsWeb.Router do
       live "/sites/new", SiteLive.Form, :new
       live "/sites/:id", SiteLive.Show, :show
       live "/sites/:id/edit", SiteLive.Form, :edit
+      live "/sites/:site_id/surveys/new", SurveyLive.Form, :new
+      live "/sites/:site_id/surveys/:id/edit", SurveyLive.Form, :edit
     end
 
     post "/users/update-password", UserSessionController, :update_password

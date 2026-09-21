@@ -3,6 +3,8 @@ defmodule LitenpsWeb.SiteLive.Show do
 
   alias Litenps.Sites
   alias Litenps.Sites.ApiKey
+  alias Litenps.Surveys
+  alias Litenps.Surveys.Survey
 
   @impl true
   def render(assigns) do
@@ -69,6 +71,79 @@ defmodule LitenpsWeb.SiteLive.Show do
               No active key. Issue one below to get your snippet.
             </p>
         <% end %>
+      </section>
+
+      <section id="surveys-section" class="mt-10">
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <h2 class="text-sm font-semibold uppercase tracking-wide opacity-70">Surveys</h2>
+            <p class="mt-1 text-sm opacity-70">
+              One survey per site can be active. The rest are never served.
+            </p>
+          </div>
+          <.button id="new-survey" navigate={~p"/sites/#{@site}/surveys/new"}>
+            <.icon name="hero-plus" class="size-4" /> New survey
+          </.button>
+        </div>
+
+        <ul
+          id="surveys"
+          phx-update="stream"
+          class="mt-4 divide-y divide-base-300 rounded-box border border-base-300"
+        >
+          <li id="surveys-empty" class="hidden only:block px-4 py-6 text-center text-sm opacity-70">
+            No surveys yet. Create one to start collecting scores.
+          </li>
+          <li
+            :for={{id, survey} <- @streams.surveys}
+            id={id}
+            class={["flex items-center gap-4 px-4 py-3", !Survey.active?(survey) && "opacity-60"]}
+          >
+            <div class="min-w-0 flex-1">
+              <p class="truncate font-medium">{survey.question}</p>
+              <p class="mt-0.5 text-xs opacity-70">
+                {survey_audience(survey)} · asks again after {survey.cooldown_days} days
+              </p>
+            </div>
+            <span class={[
+              "badge badge-sm",
+              survey.status == :active && "badge-success",
+              survey.status == :paused && "badge-warning"
+            ]}>
+              {survey.status}
+            </span>
+            <%= if Survey.active?(survey) do %>
+              <button
+                id={"pause-#{survey.id}"}
+                type="button"
+                phx-click="set_status"
+                phx-value-id={survey.id}
+                phx-value-status="paused"
+                class="btn btn-ghost btn-sm"
+              >
+                Pause
+              </button>
+            <% else %>
+              <button
+                id={"activate-#{survey.id}"}
+                type="button"
+                phx-click="set_status"
+                phx-value-id={survey.id}
+                phx-value-status="active"
+                class="btn btn-ghost btn-sm"
+              >
+                Activate
+              </button>
+            <% end %>
+            <.link
+              id={"edit-survey-#{survey.id}"}
+              navigate={~p"/sites/#{@site}/surveys/#{survey}/edit"}
+              class="btn btn-ghost btn-sm"
+            >
+              Edit
+            </.link>
+          </li>
+        </ul>
       </section>
 
       <section id="keys-section" class="mt-10">
@@ -184,7 +259,8 @@ defmodule LitenpsWeb.SiteLive.Show do
      |> assign(:page_title, site.name)
      |> assign(:site, site)
      |> assign(:key_form, to_form(%{"label" => ""}, as: :api_key))
-     |> load_keys()}
+     |> load_keys()
+     |> load_surveys()}
   end
 
   @impl true
@@ -217,6 +293,46 @@ defmodule LitenpsWeb.SiteLive.Show do
 
       {:error, :already_revoked} ->
         {:noreply, load_keys(socket)}
+    end
+  end
+
+  def handle_event("set_status", %{"id" => id, "status" => status}, socket) do
+    %{current_scope: scope, site: site} = socket.assigns
+    survey = Surveys.get_survey!(scope, site, id)
+
+    case Surveys.update_survey(scope, survey, %{"status" => status}) do
+      {:ok, _survey} ->
+        {:noreply, load_surveys(socket)}
+
+      {:error, %Ecto.Changeset{} = changeset} ->
+        {:noreply, put_flash(socket, :error, status_error(changeset))}
+    end
+  end
+
+  defp status_error(changeset) do
+    case changeset.errors[:status] do
+      {message, _opts} -> message
+      nil -> "That survey could not be updated."
+    end
+  end
+
+  # Activating one survey pauses nothing automatically, so the whole list is
+  # re-read: statuses and the active badge change together.
+  defp load_surveys(socket) do
+    surveys = Surveys.list_surveys(socket.assigns.current_scope, socket.assigns.site)
+    stream(socket, :surveys, surveys, reset: true)
+  end
+
+  defp survey_audience(%Survey{targeting: targeting}) do
+    pages =
+      case targeting.url_patterns do
+        [] -> "every page"
+        patterns -> Enum.join(patterns, ", ")
+      end
+
+    case targeting.device do
+      :all -> pages
+      device -> "#{pages} on #{device}"
     end
   end
 

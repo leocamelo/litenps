@@ -116,7 +116,19 @@ Survey definition and display rules.
 `status` (`draft|active|paused`), `theme` (jsonb), `targeting` (jsonb),
 `cooldown_days` (default 90), `sample_rate` (0.0–1.0)
 
-`targeting`: `url_patterns`, `delay_seconds`, `device`
+`targeting`: `url_patterns`, `delay_seconds`, `device` — one JSON blob, read
+whole by `/v1/config` and never queried on its own. Empty `url_patterns` means
+every page.
+
+**At most one active survey per site**, since `/v1/config` answers with a single
+survey. Enforced by a partial unique index, not only by the changeset. Drafts and
+paused surveys are never served, and pausing frees the slot.
+
+`theme` exists as a column but has no shape yet: the widget defines it in Phase 3,
+so nothing writes to it until then.
+
+Surveys are not deletable, for the same reason sites are not: they will own
+responses, and §7 names the only three paths that remove those.
 
 ### `Litenps.Collect`
 The only writer to `responses`.
