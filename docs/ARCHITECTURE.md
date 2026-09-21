@@ -122,10 +122,15 @@ every page.
 
 **At most one active survey per site**, since `/v1/config` answers with a single
 survey. Enforced by a partial unique index, not only by the changeset. Drafts and
-paused surveys are never served, and pausing frees the slot.
+paused surveys are never served, and pausing frees the slot. Relaxing this needs
+a cooldown rule across surveys before it needs a migration — see
+`docs/adr/0002-one-active-survey-per-site.md`.
 
 `theme` exists as a column but has no shape yet: the widget defines it in Phase 3,
 so nothing writes to it until then.
+
+Survey text is single-language. i18n arrives as an additive `translations` column,
+never by converting `question` — see `docs/adr/0003-survey-text-i18n.md`.
 
 Surveys are not deletable, for the same reason sites are not: they will own
 responses, and §7 names the only three paths that remove those.
