@@ -41,7 +41,7 @@ defmodule Litenps.MixProject do
   defp deps do
     [
       {:bcrypt_elixir, "~> 3.0"},
-      {:phoenix, "~> 1.8.14"},
+      {:phoenix, "~> 1.8.15"},
       {:phoenix_ecto, "~> 4.7"},
       {:ecto_sql, "~> 3.14"},
       {:postgrex, ">= 0.0.0"},
@@ -75,7 +75,7 @@ defmodule Litenps.MixProject do
       {:dns_cluster, "~> 0.2.0"},
       {:bandit, "~> 1.12"},
       {:credo, "~> 1.7", only: [:dev, :test], runtime: false},
-      {:sobelow, "~> 0.15", only: [:dev, :test], runtime: false},
+      {:sobelow, "~> 0.16", only: [:dev, :test], runtime: false},
       {:mix_audit, "~> 2.1", only: [:dev, :test], runtime: false}
     ]
   end
